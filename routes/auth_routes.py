@@ -28,10 +28,11 @@ def login():
     cur.close()
     conn.close()
     if user and check_password_hash(user[0],password):
-        access_token=create_access_token(identity=email)
+       access_token = create_access_token(identity=email, additional_claims={"role": "admin"})
 
         return jsonify({
             "msg":"Login successfully",
             "token":access_token
         })
+    
     return jsonify({"msg":"Invalid credentials"}),401
