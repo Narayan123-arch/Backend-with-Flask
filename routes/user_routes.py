@@ -9,25 +9,25 @@ def home():
     return render_template("users.html", users=users)
 
 
-@user_bp.route("/add_user", methods=["GET", "POST"])
+@user_bp.route("/add_user", methods=["POST"])
 def add_user():
-    if request.method == "POST":
-        if request.is_json:
-            data = request.get_json()
-            name = data.get("name")
-            email = data.get("email")
-            password = data.get("password")  # optional
+    try:
+        data = request.get_json()
 
-            # Make sure name and email are provided
-            if not name or not email:
-                return jsonify({"error": "Name and email are required"}), 400
+        name = data.get("name")
+        email = data.get("email")
+        password = data.get("password")
 
-            # Insert user
-            insert_user(name, email, password)
+        if not name or not email:
+            return jsonify({"error": "Name and email required"}), 400
 
-            # Return success
-            return jsonify({"message": "User added successfully"}), 201
+        insert_user(name, email, password)
 
+        return jsonify({"message": "User added"}), 201
+
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)}), 500
 
 @user_bp.route("/delete/<int:user_id>")
 def delete(user_id):
