@@ -1,49 +1,39 @@
-from db import get_connection
+from sqlalchemy import Column,Integer,String,create_engine
+from sqlalchemy.orm import declarative_base,sessionmaker
+from config import Config
 
-def create_table():
-    conn = get_connection()
-    cur = conn.cursor()
+Base=declarative_base()
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS nuser(
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(50) NOT NULL,
-            email VARCHAR(50),
-            password TEXT
-        )
-    """)
+class User(Base):
+    __tablename__='nuser'
+    id=Column(Integer,primary_key=True)
+    name=Column(String(50),nullable=False)
+    email=Column(String(50))
+    password=Column(String)
+    role=Column(String(20))
 
-    conn.commit()
-    cur.close()
-    conn.close()
+engine=create_engine(Config.DB_URL)
+SessionLocal=sessionmaker(bind=engine)
 
+Base.metadata.create_all(bind=engine)
+
+def insert_user(name,email,password=None):
+    session =SessionLocal()
+    new_user=User(name=name,email=email,password=password,role="user")
+    session.add(new_user)
+    session.commit()
+    session.close()
 
 def get_all_users():
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM nuser")
-    users = cur.fetchall()
-    cur.close()
-    conn.close()
+    session=SessionLocal()
+    users=session.query(User).all()
+    session.close()
     return users
 
-
-def insert_user(name, email, password=None):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO nuser (name,email,password) VALUES (%s,%s,%s)",
-        (name, email, password)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
 def delete_user(user_id):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM nuser WHERE id=%s", (user_id,))
-    conn.commit()
-    cur.close()
-    conn.close()
+    session=SessionLocal()
+    user=session.query(User).filter(User.id == user_id).first()
+    if user:
+        session.delete(user)
+        session.commit()
+    session.close()

@@ -1,5 +1,7 @@
-import psycopg2
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from config import Config
 
-def get_connection():
-    return psycopg2.connect(**Config.DB_CONFIG)
+engine=create_engine(Config.DB_URL)
+
+SessionLocal=sessionmaker(bind=engine)
