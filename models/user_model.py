@@ -37,3 +37,28 @@ def delete_user(user_id):
         session.delete(user)
         session.commit()
     session.close()
+
+def update_user(user_id,name=None,email=None,password=None):
+    session=SessionLocal()
+    try:
+        user=session.query(User).filter(User.id == user_id).first()
+
+        if not user:
+            return None
+        
+        if name:
+            user.name=name
+        
+        if email:
+            user.email=email
+        if password:
+            user.password=password
+        session.commit()
+        session.refresh(user)
+        return user
+    except Exception:
+        session.rollback()
+        print("Error updating user",e)
+        return None
+    finally:
+        session.close()
