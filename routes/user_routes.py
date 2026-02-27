@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for,jsonify
-from models.user_model import get_all_users, insert_user, delete_user
+from models.user_model import get_all_users, insert_user, delete_user,update_user
 
 user_bp = Blueprint("user_bp", __name__)
 
@@ -33,3 +33,18 @@ def add_user():
 def delete(user_id):
     delete_user(user_id)
     return redirect(url_for("user_bp.home"))
+
+@user_bp.route("/update/<int:user_id>",methods=["PUT"])
+def update_user_route(user_id):
+    data=request.get_json()
+
+    updated_user=update_user(
+        user_id,
+        name=data.get("name"),
+        email=data.get("email"),
+        password=data.get("password")
+
+    )
+    if not updated_user:
+        return jsonify({"message":"user not found"}),401
+    return jsonify({"message":"user updated successfully"})
