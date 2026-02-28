@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, create_refresh_token
 from werkzeug.security import generate_password_hash, check_password_hash
 from models.user_model import insert_user
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from datetime import timedelta
 from db import SessionLocal  # SQLAlchemy session factory
-
+from models.user_model import User
 
 auth_bp = Blueprint("auth_bp", __name__)
 
@@ -23,14 +25,41 @@ def login():
     email=request.json.get("email")
     password=request.json.get("password")
     session=SessionLocal()
-    user=session.query(user).filter(User.email == email).first()
+    user=session.query(User).filter(User.email == email).first()
     session.close()
    
     if user and check_password_hash(user.password,password):
-        access_token = create_access_token(identity=email, additional_claims={"role": "admin"})
+        access_token = create_access_token(
+            identity=user.id,
+         additional_claims={"role": "admin"},
+         expires_delta=timedelta(minutes=15)
+
+        )
+        refresh_token=create_refresh_token(
+            identity=user.id,
+            expires_delta=timedelta(days=7)
+        )
         return jsonify({
             "msg":"Login successfully",
-            "token":access_token
+            "access_token":access_token,
+            "refresh_token":refresh_token
         })
+
+@auth_bp.route("/profile",methods=["GET"])
+@jwt_required()
+def profile():
+    user_id=get_jwt_identity()
+    session=SessionLocal()
+    user=session.query(User).filter(User.id== user.id).first()
+    session.close()
+    if not user:
+        return jsonify({
+            "msg":"User not Found"
+        }),404
+    return jsonify({
+        "id":user.id,
+        "name":user.name,
+        "email":user.e
+    })
     
     return jsonify({"msg":"Invalid credentials"}),401
