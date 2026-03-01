@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, create_refresh_token
 from werkzeug.security import generate_password_hash, check_password_hash
 from models.user_model import insert_user
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import timedelta
 from db import SessionLocal  # SQLAlchemy session factory
 from models.user_model import User
@@ -44,13 +44,16 @@ def login():
             "access_token":access_token,
             "refresh_token":refresh_token
         })
+    return jsonify({
+        "msg":"invalid credentials"
+    },401)       
 
 @auth_bp.route("/profile",methods=["GET"])
 @jwt_required()
 def profile():
     user_id=get_jwt_identity()
     session=SessionLocal()
-    user=session.query(User).filter(User.id== user.id).first()
+    user=session.query(User).filter(User.id== user_id).first()
     session.close()
     if not user:
         return jsonify({
@@ -59,7 +62,19 @@ def profile():
     return jsonify({
         "id":user.id,
         "name":user.name,
-        "email":user.e
+        "email":user
     })
     
     return jsonify({"msg":"Invalid credentials"}),401
+
+@auth_bp.route("/admin",methods=["GET"])
+@jwt_required()
+def admin():
+    claims=get_jwt()
+    if claims.get("role")!="admin":
+        return({
+            "msg":"Admins only !"
+        }),403
+    return jsonify({
+        "msg":"welcome admin"
+    })
